@@ -472,24 +472,54 @@ concept StrongComparator =
  *  Linearize(), which just sorts by DepGraphIndex. */
 using IndexTxOrder = std::compare_three_way;
 
+/** A default cost model for SFL for SetType=BitSet<64>, based on benchmarks.
+ *
+ * The numbers here were obtained in February 2026 by:
+ * - For a variety of machines:
+ *   - Running a fixed collection of ~385000 clusters found through random generation and fuzzing,
+ *     optimizing for difficulty of linearization.
+ *     - Linearize each ~3000 times, with different random seeds. Sometimes without input
+ *       linearization, sometimes with a bad one.
+ *       - Gather cycle counts for each of the operations included in this cost model,
+ *         broken down by their parameters.
+ *   - Correct the data by subtracting the runtime of obtaining the cycle count.
+ *   - Drop the 5% top and bottom samples from each cycle count dataset, and compute the average
+ *     of the remaining samples.
+ *   - For each operation, fit a least-squares linear function approximation through the samples.
+ * - Rescale all machine expressions to make their total time match, as we only care about
+ *   relative cost of each operation.
+ * - Take the per-operation average of operation expressions across all machines, to construct
+ *   expressions for an average machine.
+ * - Approximate the result with integer coefficients. Each cost unit corresponds to somewhere
+ *   between 0.5 ns and 1.25 ns, depending on the hardware.
+ */
 class SFLDefaultCostModel
 {
     uint64_t m_cost{0};
 
 public:
-    inline void InitializeEnd(int num_txns, int num_deps) noexcept {}
-    inline void MakeTopologicalEnd(int num_chunks, int num_steps) noexcept {}
-    inline void StartOptimizingEnd(int num_chunks) noexcept {}
-    inline void ActivateEnd(int num_deps) noexcept { m_cost += num_deps + 1; }
-    inline void DeactivateEnd(int num_deps) noexcept { m_cost += num_deps + 1; }
-    inline void MergeChunksMid(int num_txns) noexcept {}
-    inline void MergeChunksEnd(int num_steps) noexcept {}
-    inline void PickMergeCandidateEnd(int num_steps) noexcept {}
-    inline void PickChunkToOptimizeEnd(int num_steps) noexcept {}
-    inline void PickDependencyToSplitEnd(int num_txns) noexcept {}
-    inline void StartMinimizingEnd(int num_chunks) noexcept {}
-    inline void MinimizeStepMid(int num_txns) noexcept {}
-    inline void MinimizeStepEnd(bool split) noexcept {}
+    inline void InitializeEnd(int num_txns, int num_deps) noexcept
+    {
+         // Cost of initialization.
+         m_cost += 33 * num_txns;
+         // Cost of producing linearization at the end.
+         m_cost += 2 * num_txns + 5 * num_deps;
+    }
+    inline void MakeTopologicalEnd(int num_chunks, int num_steps) noexcept
+    {
+        m_cost += 17 * num_chunks + 27 * num_steps;
+    }
+    inline void StartOptimizingEnd(int num_chunks) noexcept { m_cost += 12 * num_chunks; }
+    inline void ActivateEnd(int num_deps) noexcept { m_cost += 9 * num_deps; }
+    inline void DeactivateEnd(int num_deps) noexcept { m_cost += 10 * num_deps + 8; }
+    inline void MergeChunksMid(int num_txns) noexcept { m_cost += 2 * num_txns; }
+    inline void MergeChunksEnd(int num_steps) noexcept { m_cost += 2 * num_steps + 4; }
+    inline void PickMergeCandidateEnd(int num_steps) noexcept { m_cost += 7 * num_steps; }
+    inline void PickChunkToOptimizeEnd(int num_steps) noexcept { m_cost += num_steps + 4; }
+    inline void PickDependencyToSplitEnd(int num_txns) noexcept { m_cost += 7 * num_txns + 8; }
+    inline void StartMinimizingEnd(int num_chunks) noexcept { m_cost += 16 * num_chunks; }
+    inline void MinimizeStepMid(int num_txns) noexcept { m_cost += 10 * num_txns + 11; }
+    inline void MinimizeStepEnd(bool split) noexcept { m_cost += 16 * split + 6; }
 
     inline uint64_t GetCost() const noexcept { return m_cost; }
 };
