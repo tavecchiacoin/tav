@@ -4,6 +4,7 @@
 //
 
 #include <bitcoin-build-config.h> // IWYU pragma: keep
+#include <test/util/common.h>
 #include <test/util/setup_common.h>
 #include <common/run_command.h>
 #include <univalue.h>

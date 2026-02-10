@@ -7,7 +7,8 @@
 #include <vector>
 
 #include <boost/test/unit_test.hpp>
-#include <test/util/setup_common.h>
+#include <test/util/common.h>
+#include <tinyformat.h>
 
 using namespace util;
 using util::detail::CheckNumFormatSpecifiers;
@@ -215,15 +216,15 @@ BOOST_AUTO_TEST_CASE(line_reader_test)
 
         LineReader reader1(input, /*max_line_length=*/22);
         // First line is exactly the length of max_line_length
-        BOOST_CHECK_EQUAL(reader1.ReadLine(), "once upon a time there");
+        BOOST_CHECK_EQUAL(*reader1.ReadLine(), "once upon a time there");
         // Second line is +1 character too long
         BOOST_CHECK_EXCEPTION(reader1.ReadLine(), std::runtime_error, HasReason{"max_line_length exceeded by LineReader"});
 
         // Increase max_line_length by 1
         LineReader reader2(input, /*max_line_length=*/23);
         // Both lines fit within limit
-        BOOST_CHECK_EQUAL(reader2.ReadLine(), "once upon a time there");
-        BOOST_CHECK_EQUAL(reader2.ReadLine(), "was a dog who liked tea");
+        BOOST_CHECK_EQUAL(*reader2.ReadLine(), "once upon a time there");
+        BOOST_CHECK_EQUAL(*reader2.ReadLine(), "was a dog who liked tea");
         // End of buffer reached
         BOOST_CHECK(!reader2.ReadLine());
     }
@@ -231,7 +232,7 @@ BOOST_AUTO_TEST_CASE(line_reader_test)
         // Empty lines are empty
         const std::vector<std::byte> input{StringToBuffer("\n")};
         LineReader reader(input, /*max_line_length=*/1024);
-        BOOST_CHECK_EQUAL(reader.ReadLine(), "");
+        BOOST_CHECK_EQUAL(*reader.ReadLine(), "");
         BOOST_CHECK(!reader.ReadLine());
     }
     {
@@ -250,15 +251,15 @@ BOOST_AUTO_TEST_CASE(line_reader_test)
     {
         const std::vector<std::byte> input{StringToBuffer("a\nb\n")};
         LineReader reader(input, /*max_line_length=*/1);
-        BOOST_CHECK_EQUAL(reader.ReadLine(), "a");
-        BOOST_CHECK_EQUAL(reader.ReadLine(), "b");
+        BOOST_CHECK_EQUAL(*reader.ReadLine(), "a");
+        BOOST_CHECK_EQUAL(*reader.ReadLine(), "b");
         BOOST_CHECK(!reader.ReadLine());
     }
     {
         // If ReadLine fails, the iterator is reset and we can ReadLength instead
         const std::vector<std::byte> input{StringToBuffer("a\nbaboon\n")};
         LineReader reader(input, /*max_line_length=*/1);
-        BOOST_CHECK_EQUAL(reader.ReadLine(), "a");
+        BOOST_CHECK_EQUAL(*reader.ReadLine(), "a");
         // "baboon" is too long
         BOOST_CHECK_EXCEPTION(reader.ReadLine(), std::runtime_error, HasReason{"max_line_length exceeded by LineReader"});
         BOOST_CHECK_EQUAL(reader.ReadLength(1), "b");
@@ -267,7 +268,7 @@ BOOST_AUTO_TEST_CASE(line_reader_test)
         // "on" is too long
         BOOST_CHECK_EXCEPTION(reader.ReadLine(), std::runtime_error, HasReason{"max_line_length exceeded by LineReader"});
         BOOST_CHECK_EQUAL(reader.ReadLength(1), "o");
-        BOOST_CHECK_EQUAL(reader.ReadLine(), "n"); // now the remainder of the buffer fits in one line
+        BOOST_CHECK_EQUAL(*reader.ReadLine(), "n"); // now the remainder of the buffer fits in one line
         BOOST_CHECK(!reader.ReadLine());
     }
     {
