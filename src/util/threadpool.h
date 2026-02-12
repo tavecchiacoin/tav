@@ -17,6 +17,7 @@
 #include <queue>
 #include <stdexcept>
 #include <thread>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -165,6 +166,42 @@ public:
         }
         m_cv.notify_one();
         return future;
+    }
+
+    /**
+     * @brief Enqueues a batch of tasks for asynchronous execution.
+     *
+     * Returns a vector of `std::future`s that provide each task's result or
+     * propagate any exception it throws, in the same order as the input vector.
+     * Note: Ignoring the returned futures requires guarding tasks against
+     * uncaught exceptions, as they would otherwise be silently discarded.
+     *
+     * This is more efficient when submitting many tasks at once, since
+     * the queue lock is only taken once internally and all worker threads are
+     * notified. For single tasks, Submit() is preferred since only one worker
+     * thread is notified.
+     */
+    template <class F> [[nodiscard]] EXCLUSIVE_LOCKS_REQUIRED(!m_mutex)
+    auto SubmitMany(std::vector<F>&& fns)
+    {
+        using Result = std::invoke_result_t<F&>;
+        std::vector<std::future<Result>> futures;
+        if (fns.empty()) return futures;
+        futures.reserve(fns.size());
+
+        {
+            LOCK(m_mutex);
+            if (m_interrupt || m_workers.empty()) {
+                throw std::runtime_error("No active workers; cannot accept new tasks");
+            }
+            for (auto& fn : fns) {
+                std::packaged_task task{std::move(fn)};
+                futures.emplace_back(task.get_future());
+                m_work_queue.emplace(std::move(task));
+            }
+        }
+        m_cv.notify_all();
+        return futures;
     }
 
     /**
