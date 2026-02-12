@@ -8,13 +8,14 @@ from contextlib import AsyncExitStack
 from io import BytesIO
 from test_framework.blocktools import NULL_OUTPOINT
 from test_framework.messages import (
-    MAX_BLOCK_WEIGHT,
     CTransaction,
     CTxIn,
     CTxOut,
     CTxInWitness,
     ser_uint256,
     COIN,
+    MAX_BLOCK_WEIGHT,
+    MAX_BLOCK_SIGOPS_COST,
 )
 from test_framework.script import (
     CScript,
@@ -121,6 +122,15 @@ class IPCMiningTest(BitcoinTestFramework):
         self.log.debug("Create Mining proxy object")
         mining = init.makeMining(ctx).result
         return ctx, mining
+
+    async def assert_create_fails(self, mining, opts, expected_msg):
+        """Assert that createNewBlock raises a remote exception with the expected message."""
+        try:
+            await mining.createNewBlock(opts)
+            raise AssertionError("createNewBlock unexpectedly succeeded")
+        except capnp.lib.capnp.KjException as e:
+            assert_equal(e.description, f"remote exception: std::exception: {expected_msg}")
+            assert_equal(e.type, "FAILED")
 
     def run_mining_interface_test(self):
         """Test Mining interface methods."""
@@ -260,12 +270,21 @@ class IPCMiningTest(BitcoinTestFramework):
 
                 self.log.debug("Enforce minimum reserved weight for IPC clients too")
                 opts.blockReservedWeight = 0
-                try:
-                    await mining.createNewBlock(opts)
-                    raise AssertionError("createNewBlock unexpectedly succeeded")
-                except capnp.lib.capnp.KjException as e:
-                    assert_equal(e.description, "remote exception: std::exception: block_reserved_weight (0) must be at least 2000 weight units")
-                    assert_equal(e.type, "FAILED")
+                await self.assert_create_fails(mining, opts,
+                    "block_reserved_weight (0) is lower than minimum safety value of (2000)")
+
+                self.log.debug("Enforce maximum reserved weight for IPC clients too")
+                opts.blockReservedWeight = MAX_BLOCK_WEIGHT + 1
+                await self.assert_create_fails(mining, opts,
+                    f"block_reserved_weight ({MAX_BLOCK_WEIGHT + 1}) exceeds consensus maximum block weight ({MAX_BLOCK_WEIGHT})")
+
+                self.log.debug("Enforce sigops limit for IPC clients too")
+                opts.blockReservedWeight = 4000
+                opts.coinbaseOutputMaxAdditionalSigops = MAX_BLOCK_SIGOPS_COST + 1
+                await self.assert_create_fails(mining, opts,
+                    f"coinbase_output_max_additional_sigops ({MAX_BLOCK_SIGOPS_COST + 1}) exceeds consensus maximum block sigops cost ({MAX_BLOCK_SIGOPS_COST})")
+                opts.coinbaseOutputMaxAdditionalSigops = 0
+
 
         asyncio.run(capnp.run(async_routine()))
 
