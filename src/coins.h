@@ -228,7 +228,7 @@ using CCoinsMapMemoryResource = CCoinsMap::allocator_type::ResourceType;
 class CCoinsViewCursor
 {
 public:
-    CCoinsViewCursor(const uint256 &hashBlockIn): hashBlock(hashBlockIn) {}
+    CCoinsViewCursor(const uint256 &in_block_hash): block_hash(in_block_hash) {}
     virtual ~CCoinsViewCursor() = default;
 
     virtual bool GetKey(COutPoint &key) const = 0;
@@ -238,9 +238,9 @@ public:
     virtual void Next() = 0;
 
     //! Get best block at the time this cursor was created
-    const uint256 &GetBestBlock() const { return hashBlock; }
+    const uint256 &GetBestBlock() const { return block_hash; }
 private:
-    uint256 hashBlock;
+    uint256 block_hash;
 };
 
 /**
@@ -318,7 +318,7 @@ public:
 
     //! Do a bulk modification (multiple Coin changes + BestBlock change).
     //! The passed cursor is used to iterate through the coins.
-    virtual void BatchWrite(CoinsViewCacheCursor& cursor, const uint256& hashBlock);
+    virtual void BatchWrite(CoinsViewCacheCursor& cursor, const uint256& block_hash);
 
     //! Get a cursor to iterate over the whole state
     virtual std::unique_ptr<CCoinsViewCursor> Cursor() const;
@@ -338,13 +338,13 @@ protected:
     CCoinsView *base;
 
 public:
-    CCoinsViewBacked(CCoinsView *viewIn);
+    CCoinsViewBacked(CCoinsView *in_view);
     std::optional<Coin> GetCoin(const COutPoint& outpoint) const override;
     bool HaveCoin(const COutPoint &outpoint) const override;
     uint256 GetBestBlock() const override;
     std::vector<uint256> GetHeadBlocks() const override;
-    void SetBackend(CCoinsView &viewIn);
-    void BatchWrite(CoinsViewCacheCursor& cursor, const uint256& hashBlock) override;
+    void SetBackend(CCoinsView &in_view);
+    void BatchWrite(CoinsViewCacheCursor& cursor, const uint256& block_hash) override;
     std::unique_ptr<CCoinsViewCursor> Cursor() const override;
     size_t EstimateSize() const override;
 };
@@ -361,7 +361,7 @@ protected:
      * Make mutable so that we can "fill the cache" even from Get-methods
      * declared as "const".
      */
-    mutable uint256 hashBlock;
+    mutable uint256 block_hash;
     mutable CCoinsMapMemoryResource m_cache_coins_memory_resource{};
     /* The starting sentinel of the flagged entry circular doubly linked list. */
     mutable CoinsCachePair m_sentinel;
@@ -377,7 +377,7 @@ protected:
     void Reset() noexcept;
 
 public:
-    CCoinsViewCache(CCoinsView *baseIn, bool deterministic = false);
+    CCoinsViewCache(CCoinsView *in_base, bool deterministic = false);
 
     /**
      * By deleting the copy constructor, we prevent accidentally using it when one intends to create a cache on top of a base cache.
@@ -388,8 +388,8 @@ public:
     std::optional<Coin> GetCoin(const COutPoint& outpoint) const override;
     bool HaveCoin(const COutPoint &outpoint) const override;
     uint256 GetBestBlock() const override;
-    void SetBestBlock(const uint256 &hashBlock);
-    void BatchWrite(CoinsViewCacheCursor& cursor, const uint256& hashBlock) override;
+    void SetBestBlock(const uint256 &block_hash);
+    void BatchWrite(CoinsViewCacheCursor& cursor, const uint256& block_hash) override;
     std::unique_ptr<CCoinsViewCursor> Cursor() const override {
         throw std::logic_error("CCoinsViewCache cursor iteration not supported.");
     }
