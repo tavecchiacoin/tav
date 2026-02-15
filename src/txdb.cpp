@@ -169,7 +169,7 @@ class CCoinsViewDBCursor: public CCoinsViewCursor
 public:
     // Prefer using CCoinsViewDB::Cursor() since we want to perform some
     // cache warmup on instantiation.
-    CCoinsViewDBCursor(CDBIterator* pcursorIn, const uint256&in_block_hash):
+    CCoinsViewDBCursor(CDBIterator* pcursorIn, const uint256& in_block_hash):
         CCoinsViewCursor(in_block_hash), pcursor(pcursorIn) {}
     ~CCoinsViewDBCursor() = default;
 
