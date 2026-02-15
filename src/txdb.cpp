@@ -74,7 +74,8 @@ std::optional<Coin> CCoinsViewDB::GetCoin(const COutPoint& outpoint) const
     return std::nullopt;
 }
 
-bool CCoinsViewDB::HaveCoin(const COutPoint &outpoint) const {
+bool CCoinsViewDB::HaveCoin(const COutPoint& outpoint) const
+{
     return m_db->Exists(CoinEntry(&outpoint));
 }
 

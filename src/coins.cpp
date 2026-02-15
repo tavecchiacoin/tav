@@ -14,21 +14,6 @@ TRACEPOINT_SEMAPHORE(utxocache, add);
 TRACEPOINT_SEMAPHORE(utxocache, spent);
 TRACEPOINT_SEMAPHORE(utxocache, uncache);
 
-std::optional<Coin> CCoinsView::GetCoin(const COutPoint& outpoint) const { return std::nullopt; }
-uint256 CCoinsView::GetBestBlock() const { return uint256(); }
-std::vector<uint256> CCoinsView::GetHeadBlocks() const { return std::vector<uint256>(); }
-void CCoinsView::BatchWrite(CoinsViewCacheCursor& cursor, const uint256& block_hash)
-{
-    for (auto it{cursor.Begin()}; it != cursor.End(); it = cursor.NextAndMaybeErase(*it)) { }
-}
-
-std::unique_ptr<CCoinsViewCursor> CCoinsView::Cursor() const { return nullptr; }
-
-bool CCoinsView::HaveCoin(const COutPoint &outpoint) const
-{
-    return GetCoin(outpoint).has_value();
-}
-
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *in_view) : base(in_view) { }
 std::optional<Coin> CCoinsViewBacked::GetCoin(const COutPoint& outpoint) const { return base->GetCoin(outpoint); }
 bool CCoinsViewBacked::HaveCoin(const COutPoint &outpoint) const { return base->HaveCoin(outpoint); }
@@ -165,7 +150,8 @@ const Coin& CCoinsViewCache::AccessCoin(const COutPoint &outpoint) const {
     }
 }
 
-bool CCoinsViewCache::HaveCoin(const COutPoint &outpoint) const {
+bool CCoinsViewCache::HaveCoin(const COutPoint& outpoint) const
+{
     CCoinsMap::const_iterator it = FetchCoin(outpoint);
     return (it != cacheCoins.end() && !it->second.coin.IsSpent());
 }
@@ -181,7 +167,8 @@ uint256 CCoinsViewCache::GetBestBlock() const {
     return block_hash;
 }
 
-void CCoinsViewCache::SetBestBlock(const uint256 &in_block_hash) {
+void CCoinsViewCache::SetBestBlock(const uint256& in_block_hash)
+{
     block_hash = in_block_hash;
 }
 
