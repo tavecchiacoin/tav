@@ -221,7 +221,9 @@ void CTxMemPool::Apply(ChangeSet* changeset)
 
         addNewTransaction(it);
     }
-    m_txgraph->DoWork(POST_CHANGE_WORK);
+    if (!m_txgraph->DoWork(POST_CHANGE_WORK)) {
+        LogDebug(BCLog::MEMPOOL, "Mempool in non-optimal ordering after addition(s).");
+    }
 }
 
 void CTxMemPool::addNewTransaction(CTxMemPool::txiter newit)
