@@ -104,6 +104,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/module)
+
+#=============================
+# C++20 Feature Detection
+#=============================
+# In case the compiler is not GCC, Clang or MSVC this provides extra checks
+# that verifies that some feaatures are available in the standard library.
+include(CheckCXX20Features)
+check_cxx20_features()
+
 include(ProcessConfigurations)
 
 # Flatten static lib dependencies.
