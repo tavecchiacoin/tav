@@ -306,6 +306,9 @@ class MempoolClusterTest(BitcoinTestFramework):
 
         assert_equal(node.getrawmempool(), [])
 
+        # Key should exist and be trivially optimal
+        assert node.getmempoolinfo()["optimal"]
+
         # Not in-mempool
         not_mempool_tx = self.wallet.create_self_transfer()
         assert_raises_rpc_error(-5, "Transaction not in mempool", node.getmempoolcluster, not_mempool_tx["txid"])
