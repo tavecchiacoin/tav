@@ -26,24 +26,33 @@ namespace common {
 std::string StringForFeeReason(FeeReason reason)
 {
     switch (reason) {
-        case FeeReason::NONE:
-            return "None";
-        case FeeReason::HALF_ESTIMATE:
-            return "Half Target 60% Threshold";
-        case FeeReason::FULL_ESTIMATE:
-            return "Target 85% Threshold";
-        case FeeReason::DOUBLE_ESTIMATE:
-            return "Double Target 95% Threshold";
-        case FeeReason::CONSERVATIVE:
-            return "Conservative Double Target longer horizon";
-        case FeeReason::MEMPOOL_MIN:
-            return "Mempool Min Fee";
-        case FeeReason::PAYTXFEE:
-            return "PayTxFee set";
-        case FeeReason::FALLBACK:
-            return "Fallback fee";
-        case FeeReason::REQUIRED:
-            return "Minimum Required Fee";
+    case FeeReason::NONE:
+        return "None";
+    case FeeReason::HALF_ESTIMATE:
+        return "Half Target 60% Threshold";
+    case FeeReason::FULL_ESTIMATE:
+        return "Target 85% Threshold";
+    case FeeReason::DOUBLE_ESTIMATE:
+        return "Double Target 95% Threshold";
+    case FeeReason::CONSERVATIVE:
+        return "Conservative Double Target longer horizon";
+    } // no default case, so the compiler can warn about missing cases
+    assert(false);
+}
+
+std::string StringForFeeSource(FeeSource source)
+{
+    switch (source) {
+    case FeeSource::FEE_RATE_ESTIMATOR:
+        return "Fee Rate Estimator";
+    case FeeSource::MEMPOOL_MIN:
+        return "Mempool Min Fee";
+    case FeeSource::PAYTXFEE:
+        return "PayTxFee set";
+    case FeeSource::FALLBACK:
+        return "Fallback fee";
+    case FeeSource::REQUIRED:
+        return "Minimum Required Fee";
     } // no default case, so the compiler can warn about missing cases
     assert(false);
 }
