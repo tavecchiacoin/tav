@@ -2,6 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <common/args.h>
 #include <common/system.h>
 #include <consensus/validation.h>
 #include <interfaces/chain.h>
@@ -369,6 +370,16 @@ Result CommitTransaction(CWallet& wallet, const Txid& txid, CMutableTransaction&
     CTransactionRef tx = MakeTransactionRef(std::move(mtx));
     mapValue_t mapValue = oldWtx.mapValue;
     mapValue["replaces_txid"] = oldWtx.GetHash().ToString();
+
+    // Refuse to broadcast over clearnet a replacement of a privately-sent tx.
+    // The replacement spends the same inputs — broadcasting it over clearnet
+    // would link this node's IP to the original privately-broadcast transaction.
+    const bool was_private = mapValue.contains("private_broadcast") && mapValue.at("private_broadcast") == "1";
+    if (was_private && !gArgs.GetBoolArg("-privatebroadcast", false)) {
+        errors.emplace_back(Untranslated("This is a replacement of a privately broadcast transaction. "
+            "Re-enable -privatebroadcast to preserve privacy, or use sendrawtransaction to bypass."));
+        return Result::WALLET_ERROR;
+    }
 
     wallet.CommitTransaction(tx, std::move(mapValue), oldWtx.vOrderForm);
 
