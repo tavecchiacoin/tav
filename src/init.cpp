@@ -2074,8 +2074,10 @@ bool AppInitMain(NodeContext& node, interfaces::BlockAndHeaderTipInfo* tip_info)
     LogInfo("nBestHeight = %d", chain_active_height);
     if (node.peerman) node.peerman->SetBestBlock(chain_active_height, std::chrono::seconds{best_block_time});
 
-    // Map ports with NAT-PMP
-    StartMapPort(args.GetBoolArg("-natpmp", DEFAULT_NATPMP));
+    // Only start NAT-PMP port mapping if network is active
+    if (args.GetBoolArg("-networkactive", true)) {
+        StartMapPort(args.GetBoolArg("-natpmp", DEFAULT_NATPMP));
+    }
 
     CConnman::Options connOptions;
     connOptions.m_local_services = g_local_services;
@@ -2168,7 +2170,10 @@ bool AppInitMain(NodeContext& node, interfaces::BlockAndHeaderTipInfo* tip_info)
                                     "for the automatically created Tor onion service."),
                                   onion_service_target.ToStringAddrPort()));
         }
-        StartTorControl(onion_service_target);
+        // Only start Tor control if network is active
+        if (args.GetBoolArg("-networkactive", true)) {
+            StartTorControl(onion_service_target);
+        }
     }
 
     if (connOptions.bind_on_any) {
