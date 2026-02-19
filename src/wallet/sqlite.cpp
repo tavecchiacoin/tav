@@ -19,6 +19,7 @@
 #include <sqlite3.h>
 
 #include <cstdint>
+#include <fstream>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -374,6 +375,29 @@ void SQLiteDatabase::Close()
         throw std::runtime_error(strprintf("SQLiteDatabase: Failed to close database: %s\n", sqlite3_errstr(res)));
     }
     m_db = nullptr;
+
+    const fs::path& journal_path = fs::PathFromString(Filename() + "-journal");
+    if (fs::exists(journal_path)) {
+        // If the journal file is more than 0 bytes, check if the 28 byte header is zero'd
+        std::error_code ec;
+        auto size = fs::file_size(journal_path, ec);
+        if (ec) return;
+        if (size > 0) {
+            std::ifstream file{journal_path.std_path(), std::ios::binary};
+            if (!file.is_open()) return;
+
+            char header[28];
+            file.read(header, 28);
+            file.close();
+
+            if (std::any_of(header, header + 28, [](char c){ return c != 0; })) {
+                return;
+            }
+        }
+
+        // Journal file is truncated or zero'd header, so it can be safely deleted
+        fs::remove(journal_path);
+    }
 }
 
 bool SQLiteDatabase::HasActiveTxn()
