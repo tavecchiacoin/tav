@@ -12,14 +12,7 @@
 #       --error-limit=no build/bin/test_bitcoin
 #
 # Note that suppressions may depend on OS and/or library versions.
-# Tested on aarch64 and x86_64 with Ubuntu Noble system libs, using clang-16
-# and GCC, without gui.
-{
-   Suppress uninitialized bytes warning in compat code
-   Memcheck:Param
-   ioctl(TCSET{S,SW,SF})
-   fun:tcsetattr
-}
+# Tested on x86_64 with Ubuntu 26.04 system libs, using clang, without gui.
 {
    Suppress leaks on shutdown
    Memcheck:Leak

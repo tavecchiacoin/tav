@@ -18,19 +18,26 @@
 // https://stackoverflow.com/questions/1413445/reading-a-password-from-stdcin
 void SetStdinEcho(bool enable)
 {
+    if (!StdinTerminal()) {
+        return;
+    }
 #ifdef WIN32
     HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
     DWORD mode;
-    GetConsoleMode(hStdin, &mode);
+    if (!GetConsoleMode(hStdin, &mode)) {
+        return;
+    }
     if (!enable) {
         mode &= ~ENABLE_ECHO_INPUT;
     } else {
         mode |= ENABLE_ECHO_INPUT;
     }
-    SetConsoleMode(hStdin, mode);
+    (void)SetConsoleMode(hStdin, mode);
 #else
     struct termios tty;
-    tcgetattr(STDIN_FILENO, &tty);
+    if (tcgetattr(STDIN_FILENO, &tty) != 0) {
+        return;
+    }
     if (!enable) {
         tty.c_lflag &= ~ECHO;
     } else {
