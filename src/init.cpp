@@ -12,6 +12,7 @@
 #include <addrman.h>
 #include <banman.h>
 #include <blockfilter.h>
+#include <btcsignals.h>
 #include <chain.h>
 #include <chainparams.h>
 #include <chainparamsbase.h>
@@ -110,8 +111,6 @@
 #include <csignal>
 #include <sys/stat.h>
 #endif
-
-#include <boost/signals2/signal.hpp>
 
 #ifdef ENABLE_ZMQ
 #include <zmq/zmqabstractnotifier.h>
