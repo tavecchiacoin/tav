@@ -10,6 +10,8 @@
 #include <util/time.h>
 
 #include <boost/test/unit_test.hpp>
+#include <functional>
+#include <ranges>
 
 // General test values
 int NUM_WORKERS_DEFAULT = 0;
@@ -34,7 +36,8 @@ struct ThreadPoolFixture {
 // 7) Recursive submission of tasks.
 // 8) Submit task when all threads are busy, stop pool and verify task gets executed.
 // 9) Congestion test; create more workers than available cores.
-// 10) Ensure Interrupt() prevents further submissions.
+// 10) Submit many tasks in one lock acquisition.
+// 11) Ensure Interrupt() prevents further submissions.
 BOOST_FIXTURE_TEST_SUITE(threadpool_tests, ThreadPoolFixture)
 
 #define WAIT_FOR(futures)                                                         \
@@ -101,6 +104,37 @@ BOOST_AUTO_TEST_CASE(submit_tasks_complete_successfully)
     WAIT_FOR(futures);
     int expected_value = (num_tasks * (num_tasks + 1)) / 2; // Gauss sum.
     BOOST_CHECK_EQUAL(counter.load(), expected_value);
+    BOOST_CHECK_EQUAL(threadPool.WorkQueueSize(), 0);
+}
+
+// Test 10, submit many tasks in one lock acquisition
+BOOST_AUTO_TEST_CASE(submit_many_tasks_complete_successfully)
+{
+    const auto num_tasks{50};
+
+    ThreadPool threadPool{POOL_NAME};
+    threadPool.Start(NUM_WORKERS_DEFAULT);
+    std::atomic_int32_t counter{0};
+
+    std::vector<std::function<int32_t()>> tasks;
+    tasks.reserve(num_tasks);
+    for (const auto i : std::views::iota(1, num_tasks + 1)) {
+        tasks.emplace_back([&counter, i]() {
+            counter.fetch_add(i, std::memory_order_relaxed);
+            return i * i;
+        });
+    }
+
+    auto futures{threadPool.SubmitMany(std::move(tasks))};
+    BOOST_CHECK_EQUAL(futures.size(), static_cast<size_t>(num_tasks));
+
+    auto squares_sum = 0;
+    for (auto& future : futures) squares_sum += future.get();
+
+    const auto expected_counter{(num_tasks * (num_tasks + 1)) / 2}; // Gauss sum.
+    const auto expected_squares_sum{(num_tasks * (num_tasks + 1) * ((num_tasks * 2) + 1)) / 6};
+    BOOST_CHECK_EQUAL(counter, expected_counter);
+    BOOST_CHECK_EQUAL(squares_sum, expected_squares_sum);
     BOOST_CHECK_EQUAL(threadPool.WorkQueueSize(), 0);
 }
 
@@ -289,7 +323,7 @@ BOOST_AUTO_TEST_CASE(congestion_more_workers_than_cores)
     BOOST_CHECK_EQUAL(counter.load(), num_tasks);
 }
 
-// Test 10, Interrupt() prevents further submissions
+// Test 11, Interrupt() prevents further submissions
 BOOST_AUTO_TEST_CASE(interrupt_blocks_new_submissions)
 {
     // 1) Interrupt from main thread
