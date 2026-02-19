@@ -6,12 +6,12 @@
 #include <ipc/capnp/protocol.h>
 #include <ipc/process.h>
 #include <ipc/protocol.h>
-#include <logging.h>
-#include <mp/proxy-types.h>
 #include <ipc/test/ipc_test.capnp.h>
 #include <ipc/test/ipc_test.capnp.proxy.h>
 #include <ipc/test/ipc_test.h>
+#include <mp/proxy-types.h>
 #include <tinyformat.h>
+#include <util/log.h>
 #include <validation.h>
 
 #include <future>
