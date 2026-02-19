@@ -731,6 +731,12 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
                 if flush_scheduler:
                     for r in rpc_connections:
                         r.syncwithvalidationinterfacequeue()
+                # We also should never see a non-optimal mempool in functional tests
+                for r in rpc_connections:
+                    info = r.getmempoolinfo()
+                    # Note: This gate can be removed once compatibility tests run versions exposing this key
+                    if "optimal" in info:
+                        assert info['optimal'], f"Mempool not optimal on node after sync! {info}"
                 return
             # Check that each peer has at least one connection
             assert (all([len(x.getpeerinfo()) for x in rpc_connections]))
