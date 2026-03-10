@@ -133,13 +133,13 @@ public:
         vSeeds.clear();
        
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,0);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,128);
-        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x88, 0xB2, 0x1E};
-        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x88, 0xAD, 0xE4};
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,65);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,50);
+        base58Prefixes[SECRET_KEY] = std::vector<unsigned char>(1,193);
+        base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x54, 0x41, 0x56};
+        base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x54, 0x41, 0x57};
 
-        bech32_hrp = "bc";
+        bech32_hrp = "tav";
 
         vFixedSeeds.clear();
 
