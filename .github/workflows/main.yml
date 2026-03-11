@@ -1,1 +1,26 @@
+name: TAV Build
 
+on:
+  push:
+    branches: [ "25.x" ]
+  pull_request:
+    branches: [ "25.x" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential libtool autotools-dev automake pkg-config bsdmainutils python3
+
+    - name: Build TAV
+      run: |
+        ./autogen.sh
+        ./configure
+        make -j2
