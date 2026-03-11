@@ -11,16 +11,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y build-essential libtool autotools-dev automake pkg-config bsdmainutils python3
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            build-essential \
+            libtool \
+            autotools-dev \
+            automake \
+            pkg-config \
+            bsdmainutils \
+            python3 \
+            libevent-dev \
+            libboost-system-dev \
+            libboost-filesystem-dev \
+            libboost-test-dev \
+            libboost-thread-dev \
+            libsqlite3-dev
 
-    - name: Build TAV
-      run: |
-        ./autogen.sh
-        ./configure
-        make -j2
+      - name: Build TAV
+        run: |
+          ./autogen.sh
+          ./configure --without-gui --disable-wallet
+          make -j2
