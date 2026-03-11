@@ -34,6 +34,15 @@ jobs:
 
       - name: Build TAV
         run: |
+              - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tav-build
+          path: |
+            src/bitcoind
+            src/bitcoin-cli
+            src/bitcoin-tx
+            src/bitcoin-util
           ./autogen.sh
           ./configure --without-gui --disable-wallet
           make -j2
